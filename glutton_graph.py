@@ -8,6 +8,7 @@ def greedy_coloring(graph):
     :return: un dictionnaire où les clés sont les sommets et les valeurs sont les couleurs attribuées.
     """
     coloring = {}  # Dictionnaire pour stocker la couleur de chaque sommet
+    alpha = 0
     for node in graph:
         # Créer un ensemble des couleurs utilisées par les voisins du sommet
         neighbor_colors = set(coloring.get(neighbor) for neighbor in graph[node] if neighbor in coloring)
@@ -19,50 +20,46 @@ def greedy_coloring(graph):
 
         # Attribuer la couleur au sommet
         coloring[node] = color
+        alpha = max(alpha, color)
 
-    return coloring
+    return alpha, coloring
 
 
-def greedy_coloring_tons(graph, a, b):
+def greedy_coloring_tons(graph, b):
     """
-    Algorithme de coloration gloutonne pour une (a, b)-coloration par tons.
+    Algorithme glouton pour trouver le plus petit a dans une (a, b)-coloration par tons.
 
-    :param graph: dictionnaire représentant le graphe sous forme d'adjacence
-    :param a: nombre total de couleurs disponibles (de 1 à a)
-    :param b: nombre maximal de couleurs partagées entre deux sommets adjacents
-    :return: dictionnaire où les clés sont les sommets et les valeurs sont les ensembles de couleurs associés à chaque sommet
+    :param graph: Graphe sous forme d'un dictionnaire d'adjacence.
+    :param b: Nombre de couleurs par sommet.
+    :return: Tuple (a_min, coloring) où a_min est le plus petit a trouvé et coloring est un dictionnaire sommet -> ensemble de couleurs.
     """
-    coloring = {}  # Dictionnaire pour stocker l'ensemble de couleurs de chaque sommet
+    # Initialisation : Commence avec a = b (valeur minimale possible pour a)
+    a = b
+    coloring = {}
 
-    # Fonction qui vérifie si l'ensemble de couleurs du sommet est valide avec ses voisins
-    def is_valid_coloring(node, colors_to_add):
-        for neighbor in graph[node]:
-            if neighbor in coloring:
-                # Vérifie la contrainte sur le nombre de couleurs partagées
-                if len(set(coloring[neighbor]) & set(colors_to_add)) >= b:
-                    return False
-        return True
+    while True:  # On augmente a jusqu'à trouver une coloration valide
+        coloring.clear()
+        available_colors = list(range(1, a + 1))  # Les couleurs possibles
 
-    # On parcourt tous les sommets du graphe
-    for node in graph:
-        # Commence avec un ensemble vide de couleurs pour ce sommet
-        colors_to_add = set()
+        for node in graph:
+            used_colors = set()
+            # Collecte des couleurs utilisées par les voisins
+            for neighbor in graph[node]:
+                if neighbor in coloring:
+                    used_colors.update(coloring[neighbor])
 
-        # Recherche les couleurs valides à attribuer au sommet
-        for color in range(1, a + 1):
-            if color not in colors_to_add:
-                # Tente d'ajouter la couleur au sommet
-                colors_to_add.add(color)
+            # Essayer d'assigner b couleurs à node tout en respectant les contraintes
+            possible_colors = [c for c in available_colors if
+                               sum(1 for n in graph[node] if c in coloring.get(n, set())) < b]
 
-                # Si l'ajout de cette couleur est valide, on continue
-                if is_valid_coloring(node, colors_to_add):
-                    break
-                else:
-                    # Sinon, on annule l'ajout et on continue
-                    colors_to_add.remove(color)
+            if len(possible_colors) < b:
+                break  # Échec : il faut plus de couleurs
+            else:
+                coloring[node] = set(possible_colors[:b])  # Attribuer b couleurs à ce sommet
 
-        # Si un ensemble de couleurs a été trouvé, on l'attribue au sommet
-        coloring[node] = colors_to_add
+        # Si tous les sommets ont été coloriés correctement, on a trouvé le bon a
+        if len(coloring) == len(graph):
+            return a, coloring
 
-    return coloring
+        a += 1  # Sinon, on augmente a et on recommence
 

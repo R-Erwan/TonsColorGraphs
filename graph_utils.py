@@ -59,4 +59,29 @@ def display_coloring(coloring):
             color_code = Fore.WHITE  # Couleur par défaut
 
         # Afficher le sommet avec la couleur appropriée
-        print(f"{color_code}Sommet {node} : Couleur {color}{Style.RESET_ALL}")
+        print(f"Sommet {node} : {color_code}{color}{Style.RESET_ALL}")
+
+
+# Dictionnaire associant les couleurs aux codes ANSI
+COLOR_MAP = {
+    1: Fore.RED,
+    2: Fore.GREEN,
+    3: Fore.YELLOW,
+    4: Fore.BLUE,
+    5: Fore.MAGENTA,
+    6: Fore.CYAN,
+    7: Fore.WHITE,
+}
+def display_tone_coloring(coloring):
+    """
+    Affiche une (a, b)-coloration par tons d'un graphe en utilisant des couleurs dans le terminal.
+
+    :param coloring: Dictionnaire {sommet: ensemble de couleurs}.
+    """
+    for node, colors in coloring.items():
+        color_str = ""
+        for color in colors:
+            color_code = COLOR_MAP.get(color, Fore.WHITE)  # Par défaut, blanc
+            color_str += f"{color_code}{color} "
+
+        print(f"Sommet {node} : {color_str}{Style.RESET_ALL}")
