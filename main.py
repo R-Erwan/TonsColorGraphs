@@ -1,5 +1,4 @@
-# Test graphe aléatoire
-from glutton_graph import greedy_coloring, greedy_coloring_tons
+from glutton_graph import greedy_coloring, greedy_coloring_tons, greedy_stats, print_stats_table, plot_stats
 from graph_utils import generate_random_graph, generate_circular_graph, display_coloring, display_tone_coloring
 
 def all(n,p,b=2,alphaOnly=False):
@@ -21,4 +20,8 @@ def all(n,p,b=2,alphaOnly=False):
 
 
 
-all(n=5,p=0.5,b=2,alphaOnly=False)
+
+# all(n=5,p=0.5,b=2,alphaOnly=False)
+stats = greedy_stats(max_n=40, p=0.5, max_b=5, iteration=1)
+print_stats_table(stats)
+plot_stats(stats)
