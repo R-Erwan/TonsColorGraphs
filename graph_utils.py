@@ -1,6 +1,7 @@
 import random
 from colorama import Fore, Style
 
+
 def generate_random_graph(n, p):
     """
     Génère un graphe aléatoire G(n, p) où n est le nombre de sommets
@@ -34,6 +35,7 @@ def generate_circular_graph(n, t):
         graph[(i + t) % n].append(i)
 
     return graph
+
 
 def display_coloring(coloring):
     """
@@ -72,6 +74,8 @@ COLOR_MAP = {
     6: Fore.CYAN,
     7: Fore.WHITE,
 }
+
+
 def display_tone_coloring(coloring):
     """
     Affiche une (a, b)-coloration par tons d'un graphe en utilisant des couleurs dans le terminal.

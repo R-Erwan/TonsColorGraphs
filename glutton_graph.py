@@ -57,8 +57,7 @@ def greedy_coloring_tons(graph, b):
                     used_colors.update(coloring[neighbor])
 
             # Essayer d'assigner b couleurs à node tout en respectant les contraintes
-            possible_colors = [c for c in available_colors if
-                               sum(1 for n in graph[node] if c in coloring.get(n, set())) < b]
+            possible_colors = [c for c in available_colors if sum(1 for n in graph[node] if c in coloring.get(n, set())) < b]
 
             if len(possible_colors) < b:
                 break  # Échec : il faut plus de couleurs
