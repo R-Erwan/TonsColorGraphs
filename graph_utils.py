@@ -89,3 +89,13 @@ def display_tone_coloring(coloring):
             color_str += f"{color_code}{color} "
 
         print(f"Sommet {node} : {color_str}{Style.RESET_ALL}")
+
+def alpha(coloring):
+    """
+    Retourne le nombre chromatique alpha à partir d'un dictionnaire de coloration.
+
+    :param coloring: dictionnaire où les clés sont les sommets et les valeurs sont les couleurs attribuées.
+    :return: la valeur alpha correspondant au nombre maximal de couleurs utilisées.
+    """
+    return max(coloring.values(), default=0)
+

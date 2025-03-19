@@ -13,7 +13,7 @@ def dsatur(graphe):
     
     # Colorie le sommet le plus eleve
     premier_noeud = max(degre, key=degre.get)
-    couleurs[premier_noeud] = 0
+    couleurs[premier_noeud] = 1
     non_colores.remove(premier_noeud)
     
     # Update la saturation des voisins du premier sommet
@@ -40,7 +40,7 @@ def dsatur(graphe):
         
         # Plus petite couleur possible non utilisée par les voisins
         couleurs_voisins = set(couleurs[voisin] for voisin in graphe[noeud_choisi] if couleurs[voisin] is not None)
-        couleur = 0
+        couleur = 1
 
         while couleur in couleurs_voisins:
             couleur += 1
