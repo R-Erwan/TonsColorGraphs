@@ -1,10 +1,13 @@
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+import itertools
+import matplotlib.pyplot as plt
+import numpy as np
 
-from graph_utils import generate_random_graph
 
+from graph_utils import generate_random_graph, shortest_path_length
+
+# Algos
 
 def greedy_coloring(graph):
     """
@@ -32,48 +35,54 @@ def greedy_coloring(graph):
 
     return alpha, coloring
 
-
-def greedy_coloring_tons(graph, b):
+def greedy_coloring_tons(graph,b):
     """
-    Algorithme glouton pour trouver le plus petit a dans une (a, b)-coloration par tons.
+   Algorithme glouton pour trouver le plus petit a dans une (a, b)-coloration par tons.
 
-    :param graph: Graphe sous forme d'un dictionnaire d'adjacence.
-    :param b: Nombre de couleurs par sommet.
-    :return: Tuple (a_min, coloring) où a_min est le plus petit a trouvé et coloring est un dictionnaire sommet -> ensemble de couleurs.
+   :param graph: Graphe sous forme d'un dictionnaire d'adjacence.
+   :param b: Nombre de couleurs par sommet.
+   :return: Tuple (a_min, coloring) où a_min est le plus petit a trouvé et coloring est un dictionnaire sommet -> ensemble de couleurs.
     """
-    # Initialisation : Commence avec a = b (valeur minimale possible pour a)
-    a = b
-    coloring = {}
+    nodes = list(graph.keys())
+    a = b  # On commence avec b couleurs et on augmente si nécessaire
+    coloring = {node: set() for node in nodes}
 
-    while True:  # On augmente a jusqu'à trouver une coloration valide
-        coloring.clear()
-        available_colors = list(range(1, a + 1))  # Les couleurs possibles
+    # Fonction pour vérifier si une assignation est valide
+    def is_valid_coloring(node, colors_set):
+        for neighbor in nodes:
+            if neighbor != node:
+                d = shortest_path_length(graph, node, neighbor)
+                if len(coloring[neighbor] & colors_set) >= d:
+                    return False
+        return True
 
-        for node in graph:
-            used_colors = set()
-            # Collecte des couleurs utilisées par les voisins
-            for neighbor in graph[node]:
-                if neighbor in coloring:
-                    used_colors.update(coloring[neighbor])
+    # Assigner les couleurs aux sommets
+    for node in nodes:
+        assigned = False
+        for color_set in itertools.combinations(range(1, a + 1), b):
+            color_set = set(color_set)
+            if is_valid_coloring(node, color_set):
+                coloring[node] = color_set
+                assigned = True
+                break
 
-            # Essayer d'assigner b couleurs à node tout en respectant les contraintes
-            possible_colors = [c for c in available_colors if sum(1 for n in graph[node] if c in coloring.get(n, set())) < b]
+        # Si aucune combinaison ne fonctionne, augmenter a
+        while not assigned:
+            a += 1
+            for color_set in itertools.combinations(range(1, a + 1), b):
+                color_set = set(color_set)
+                if is_valid_coloring(node, color_set):
+                    coloring[node] = color_set
+                    assigned = True
+                    break
 
-            if len(possible_colors) < b:
-                break  # Échec : il faut plus de couleurs
-            else:
-                coloring[node] = set(possible_colors[:b])  # Attribuer b couleurs à ce sommet
+    return a, coloring
 
-        # Si tous les sommets ont été coloriés correctement, on a trouvé le bon a
-        if len(coloring) == len(graph):
-            return a, coloring
-
-        a += 1  # Sinon, on augmente a et on recommence
-
+# Misc functions
 
 def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20):
     """
-    Génère des statistiques sur l'algorithme de coloration glouton par tons.
+    Génère des statistiques sur l'algorithme de coloration glouton par tons avec affichage de progression.
 
     :param max_n: Nombre maximal de sommets du graphe.
     :param p: Probabilité d'ajouter une arête dans le graphe aléatoire.
@@ -82,6 +91,8 @@ def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20):
     :return: Un dictionnaire avec les résultats sous forme de tableau.
     """
     stats = {b: [] for b in range(1, max_b + 1)}
+    total_iterations = max_n * max_b * iteration  # Nombre total d'itérations
+    progress = 0  # Compteur de progression
 
     for n in range(1, max_n + 1):
         for b in range(1, max_b + 1):
@@ -92,10 +103,16 @@ def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20):
                 a_b, _ = greedy_coloring_tons(random_graph, b=b)
                 a_values.append(a_b)
 
+                # Mettre à jour la progression
+                progress += 1
+                percentage = (progress / total_iterations) * 100
+                print(f"Progression: {progress}/{total_iterations} ({percentage:.2f}%)", end="\r", flush=True)
+
             # Calcul de la moyenne de a pour ce couple (n, b)
             avg_a = np.mean(a_values)
             stats[b].append(avg_a)
 
+    print("\nAnalyse terminée !")  # Affichage final pour éviter l'écrasement de la dernière ligne
     return stats
 
 def print_stats_table(stats):
@@ -109,9 +126,6 @@ def print_stats_table(stats):
     df.columns.name = "b"
 
     print(df.to_string(float_format="{:.0f}".format))  # Affichage avec 2 décimales
-
-
-
 
 def plot_stats(stats):
     """
@@ -128,7 +142,7 @@ def plot_stats(stats):
     data = np.array([stats[b] for b in b_values])
 
     plt.figure(figsize=(10, 6))
-    sns.heatmap(data, annot=False, cmap="coolwarm", xticklabels=n_values, yticklabels=b_values, fmt=".2f")
+    sns.heatmap(data, annot=True, cmap="coolwarm", xticklabels=n_values, yticklabels=b_values, fmt=".2f")
 
     plt.xlabel("Nombre de sommets (n)")
     plt.ylabel("Valeur de b")

@@ -1,7 +1,18 @@
 import random
 from colorama import Fore, Style
+from collections import deque
 
+COLOR_MAP = {
+    1: Fore.RED,
+    2: Fore.GREEN,
+    3: Fore.YELLOW,
+    4: Fore.BLUE,
+    5: Fore.MAGENTA,
+    6: Fore.CYAN,
+    7: Fore.WHITE,
+}
 
+# Random generation
 def generate_random_graph(n, p):
     """
     Génère un graphe aléatoire G(n, p) où n est le nombre de sommets
@@ -16,7 +27,6 @@ def generate_random_graph(n, p):
                 graph[j].append(i)
 
     return graph
-
 
 def generate_circular_graph(n, t):
     """
@@ -36,7 +46,7 @@ def generate_circular_graph(n, t):
 
     return graph
 
-
+# Coloring display
 def display_coloring(coloring):
     """
     Affiche le coloriage d'un graphe en utilisant des couleurs dans le terminal.
@@ -63,19 +73,6 @@ def display_coloring(coloring):
         # Afficher le sommet avec la couleur appropriée
         print(f"Sommet {node} : {color_code}{color}{Style.RESET_ALL}")
 
-
-# Dictionnaire associant les couleurs aux codes ANSI
-COLOR_MAP = {
-    1: Fore.RED,
-    2: Fore.GREEN,
-    3: Fore.YELLOW,
-    4: Fore.BLUE,
-    5: Fore.MAGENTA,
-    6: Fore.CYAN,
-    7: Fore.WHITE,
-}
-
-
 def display_tone_coloring(coloring):
     """
     Affiche une (a, b)-coloration par tons d'un graphe en utilisant des couleurs dans le terminal.
@@ -90,6 +87,7 @@ def display_tone_coloring(coloring):
 
         print(f"Sommet {node} : {color_str}{Style.RESET_ALL}")
 
+# Misc function for graphs
 def alpha(coloring):
     """
     Retourne le nombre chromatique alpha à partir d'un dictionnaire de coloration.
@@ -99,3 +97,38 @@ def alpha(coloring):
     """
     return max(coloring.values(), default=0)
 
+def compute_distances(graph):
+    """Calcule la distance entre toutes les paires de sommets avec BFS."""
+    distances = {node: {} for node in graph}
+
+    for start in graph:
+        queue = deque([(start, 0)])  # (sommet, distance actuelle)
+        visited = {start}
+
+        while queue:
+            node, dist = queue.popleft()
+            distances[start][node] = dist  # Distance entre start et node
+
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append((neighbor, dist + 1))
+
+    return distances
+
+def get_nodes_at_distance_k(distances, x, k):
+    """Retourne la liste des sommets à distance k du sommet x."""
+    return [node for node, dist in distances.get(x, {}).items() if dist == k]
+
+def shortest_path_length(graph, source, target):
+    visited = {source}
+    queue = [(source, 0)]
+    while queue:
+        node, dist = queue.pop(0)
+        if node == target:
+            return dist
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, dist + 1))
+    return float('inf')  # Si aucun chemin n'existe
