@@ -3,8 +3,7 @@ import seaborn as sns
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
-
-
+import time
 from graph_utils import generate_random_graph, shortest_path_length
 
 # Algos
@@ -80,9 +79,9 @@ def greedy_coloring_tons(graph,b):
 
 # Misc functions
 
-def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20):
+def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20, algo='tons'):
     """
-    Génère des statistiques sur l'algorithme de coloration glouton par tons avec affichage de progression.
+    Génère des statistiques sur l'algorithme de coloration glouton, sur le alpha.
 
     :param max_n: Nombre maximal de sommets du graphe.
     :param p: Probabilité d'ajouter une arête dans le graphe aléatoire.
@@ -100,8 +99,13 @@ def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20):
 
             for _ in range(iteration):
                 random_graph = generate_random_graph(n, p)
-                a_b, _ = greedy_coloring_tons(random_graph, b=b)
-                a_values.append(a_b)
+
+                if(algo == 'tons'):
+                    a_b, _ = greedy_coloring_tons(random_graph, b=b)
+                    a_values.append(a_b)
+                else :
+                    a_b, _ = greedy_coloring(random_graph)
+                    a_values.append(a_b)
 
                 # Mettre à jour la progression
                 progress += 1
@@ -114,6 +118,113 @@ def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20):
 
     print("\nAnalyse terminée !")  # Affichage final pour éviter l'écrasement de la dernière ligne
     return stats
+
+def perf_stats_nodes(node_min=2, nodes_max=10, p=0.5, b=2, iteration=5, algo="both"):
+    """
+    Génère des statistiques sur les algorithmes de coloration, en fonction du nombre de sommets
+    et du temps d'exécution.
+
+    :param algo: both | simple | tons
+    :param node_min: Le nombre de sommets minimum
+    :param nodes_max: Le nombre de sommets maximal
+    :param p: Probabilité d'ajout d'arêtes dans le graphe aléatoire
+    :param b: Nombre de couleurs pour greedy_coloring_tons
+    :param iteration: Nombre de répétitions pour moyenne
+    :return: DataFrame avec colonnes: n, time_greedy (s), time_tons (s)
+    """
+    data = {
+        "n": [],
+        "time_greedy": [],
+        "time_tons": []
+    }
+    progress = 0
+    total_iterations = (nodes_max - node_min + 1 ) * iteration
+
+    for n in range(node_min, nodes_max + 1):
+        total_time_greedy = 0
+        total_time_tons = 0
+
+        for _ in range(iteration):
+            graph = generate_random_graph(n, p)
+
+            # Temps pour greedy_coloring
+            if algo == "both" or algo == "simple":
+                start = time.perf_counter()
+                _, _ = greedy_coloring(graph)
+                total_time_greedy += time.perf_counter() - start
+
+            if algo == "both" or algo == "tons":
+                # Temps pour greedy_coloring_tons
+                start = time.perf_counter()
+                _, _ = greedy_coloring_tons(graph, b=b)
+                total_time_tons += time.perf_counter() - start
+
+            progress += 1
+            percentage = (progress / total_iterations) * 100
+            print(f"Progression: {progress}/{total_iterations} ({percentage:.2f}%)", end="\r", flush=True)
+
+        avg_time_greedy = total_time_greedy / iteration
+        avg_time_tons = total_time_tons / iteration
+
+        data["n"].append(n)
+        data["time_greedy"].append(avg_time_greedy)
+        data["time_tons"].append(avg_time_tons)
+
+    return pd.DataFrame(data)
+
+def max_perf_stats(node_min=2, p=0.5, b=2, algo="both", max_avg_time=10):
+    """
+    Génère des statistiques sur les algorithmes de coloration, en augmentant le nombre de sommets.
+    S'arrête dès qu'un des algorithmes dépasse max_avg_time secondes pour un seul test.
+
+    :param algo: both | simple | tons
+    :param node_min: Le nombre de sommets minimum
+    :param p: Probabilité d'ajout d'arêtes dans le graphe aléatoire
+    :param b: Nombre de couleurs pour greedy_coloring_tons
+    :param max_avg_time: Temps maximum toléré en secondes avant arrêt
+    :return: DataFrame avec colonnes: n, time_greedy (s), time_tons (s)
+    """
+    data = {
+        "n": [],
+        "time_greedy": [],
+        "time_tons": []
+    }
+
+    n = node_min
+
+    while True:
+        print(f"Perf n = {n}", flush=True, end="\r")
+
+        graph = generate_random_graph(n, p)
+
+        time_greedy = 0
+        time_tons = 0
+
+        if algo in ("both", "simple"):
+            start = time.perf_counter()
+            _, _ = greedy_coloring(graph)
+            time_greedy = time.perf_counter() - start
+
+        if algo in ("both", "tons"):
+            start = time.perf_counter()
+            _, _ = greedy_coloring_tons(graph, b=b)
+            time_tons = time.perf_counter() - start
+
+        data["n"].append(n)
+        data["time_greedy"].append(time_greedy)
+        data["time_tons"].append(time_tons)
+
+        # Condition d’arrêt
+        if (algo in ("both", "simple") and time_greedy > max_avg_time) or \
+           (algo in ("both", "tons") and time_tons > max_avg_time):
+            print(f"\n⏱️ Arrêt à n = {n} : temps d'exécution supérieur à {max_avg_time} secondes.")
+            break
+
+        n += 1
+
+    return pd.DataFrame(data)
+
+# Prints and plots funct
 
 def print_stats_table(stats):
     """
@@ -147,4 +258,21 @@ def plot_stats(stats):
     plt.xlabel("Nombre de sommets (n)")
     plt.ylabel("Valeur de b")
     plt.title("Carte de chaleur du nombre de couleurs utilisées")
+    plt.show()
+
+def plot_perf(df):
+    """
+    Affichage d'une courbe en fonction du tableau des temps d'exécutions
+    :param df: Tableau des temps d'exécutions
+    :return:
+    """
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(data=df, x="n", y="time_greedy", label="Greedy Coloring")
+    sns.lineplot(data=df, x="n", y="time_tons", label="Greedy Tons Coloring")
+    plt.xlabel("Nombre de sommets (n)")
+    plt.ylabel("Temps d'exécution moyen (s)")
+    plt.title("Temps d'exécution en fonction de n")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
     plt.show()
