@@ -5,7 +5,7 @@ from glutton_graph import (
     greedy_stats,
     print_stats_table,
     plot_stats,
-    perf_stats_nodes, plot_perf, max_perf_stats
+    perf_stats_nodes, plot_perf, max_perf_stats, plot_perf_multi
 )
 from graph_utils import (
     generate_random_graph,
@@ -15,7 +15,7 @@ from graph_utils import (
 )
 from classic_graph import G1
 import time
-
+import pandas as pd
 
 def all(n=5, p=0.5, b=2, alpha_only=False, circular=False, t=1, graph=None):
     """
@@ -58,19 +58,46 @@ def all(n=5, p=0.5, b=2, alpha_only=False, circular=False, t=1, graph=None):
         display_coloring(coloring=dsatur_coloring)
     print("")
 
+# ===== GLUTTON ALGO STATS =====
+
+# 1 - HeatMap random graph n - b(1-4)
+results = greedy_stats(max_n=10,p=0.5,max_b=4,iteration=5,algo="tons",circular=False)
+print_stats_table(results)
+plot_stats(results)
 
 
-# stats = greedy_stats(max_n=10, p=0.5, max_b=4, iteration=10,algo="tons")
-# print_stats_table(stats)
-# plot_stats(stats)
-# all(n=5,p=0.5,b=2,alpha_only=False)
+# 2 - HeatMap circular graph n - b(1-4) - t(1-3)
+results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=1)
+print_stats_table(results)
+plot_stats(results)
 
-# all(b=1,alpha_only=False,graph=G1)
-# all(b=2,alpha_only=False,graph=G1)
-# all(b=3,alpha_only=True,graph=G1)
+results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=3)
+print_stats_table(results)
+plot_stats(results)
 
-# stats = perf_stats_nodes(2,400,0.5,2,1,algo="both")
-# plot_perf(stats)
+results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=4)
+print_stats_table(results)
+plot_stats(results)
 
-stats = max_perf_stats(node_min=1,p=0.5,b=1,algo="simple",max_avg_time=3)
-plot_perf(stats)
+
+# 3 Perfs random graph b (2-5)
+results = []
+for b in range(2, 6):
+    df_b = max_perf_stats(node_min=1, p=0.5, b=b, algo="tons", max_avg_time=1,circular=False)
+    df_b["b"] = b
+    results.append(df_b)
+
+df_all = pd.concat(results, ignore_index=True)
+plot_perf_multi(df_all)
+
+
+# 4 Perfs circular graph b(1-5) - t = 2
+results = []
+for b in range(2, 6):
+    df_b = max_perf_stats(node_min=1, p=0.5, b=b, algo="tons", max_avg_time=1,circular=True,t=2)
+    df_b["b"] = b
+    results.append(df_b)
+
+df_all = pd.concat(results, ignore_index=True)
+plot_perf_multi(df_all)
+

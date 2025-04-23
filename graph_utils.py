@@ -21,11 +21,10 @@ def generate_random_graph(n, p):
     graph = {i: [] for i in range(n)}  # Initialiser un dictionnaire vide pour n sommets
 
     for i in range(n):
-        for j in range(i + 1, n):  # Pour chaque paire de sommets non encore connectés
+        for j in range(i + 1, n):  # Pour chaque paire de sommets
             if random.random() < p:  # On ajoute une arête avec probabilité p
                 graph[i].append(j)
                 graph[j].append(i)
-
     return graph
 
 def generate_circular_graph(n, t):
@@ -33,18 +32,14 @@ def generate_circular_graph(n, t):
     Génère un graphe circulant Cn(1, t) de n sommets avec une distance t.
     """
     graph = {i: [] for i in range(n)}  # Initialiser un dictionnaire vide pour n sommets
-
-    # Ajouter les arêtes du cycle
     for i in range(n):
         graph[i].append((i + 1) % n)  # Arête i -> i+1 (cycle)
         graph[(i + 1) % n].append(i)
-
-    # Ajouter les arêtes supplémentaires de distance t
-    for i in range(n):
-        graph[i].append((i + t) % n)  # Arête i -> i+t (distance t)
-        graph[(i + t) % n].append(i)
-
+        if t>1:
+            graph[i].append((i + t) % n)  # Arête i -> i+t (distance t)
+            graph[(i + t) % n].append(i)
     return graph
+
 
 # Coloring display
 def display_coloring(coloring):

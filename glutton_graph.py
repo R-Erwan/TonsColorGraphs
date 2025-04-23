@@ -1,10 +1,13 @@
+from typing import Any
+
 import pandas as pd
 import seaborn as sns
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-from graph_utils import generate_random_graph, shortest_path_length
+from graph_utils import generate_random_graph, shortest_path_length, generate_circular_graph
+
 
 # Algos
 
@@ -79,7 +82,7 @@ def greedy_coloring_tons(graph,b):
 
 # Misc functions
 
-def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20, algo='tons'):
+def greedy_stats(max_n = 10, p = 0.5, max_b = 5, iteration = 20, algo = 'tons', circular = False, t = 1) :
     """
     Génère des statistiques sur l'algorithme de coloration glouton, sur le alpha.
 
@@ -98,9 +101,12 @@ def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20, algo='tons'):
             a_values = []  # Liste des valeurs de a obtenues
 
             for _ in range(iteration):
-                random_graph = generate_random_graph(n, p)
+                if circular:
+                    random_graph = generate_circular_graph(n,t)
+                else:
+                    random_graph = generate_random_graph(n, p)
 
-                if(algo == 'tons'):
+                if algo == 'tons':
                     a_b, _ = greedy_coloring_tons(random_graph, b=b)
                     a_values.append(a_b)
                 else :
@@ -119,60 +125,70 @@ def greedy_stats(max_n=10, p=0.5, max_b=5, iteration=20, algo='tons'):
     print("\nAnalyse terminée !")  # Affichage final pour éviter l'écrasement de la dernière ligne
     return stats
 
-def perf_stats_nodes(node_min=2, nodes_max=10, p=0.5, b=2, iteration=5, algo="both"):
+def perf_stats_nodes(node_min=2, nodes_max=10, p=0.5, max_b=2, iteration=5, algo="both", circular=False, t=1):
     """
-    Génère des statistiques sur les algorithmes de coloration, en fonction du nombre de sommets
-    et du temps d'exécution.
+    Génère des statistiques sur les algorithmes de coloration, en fonction du nombre de sommets,
+    du paramètre b (nombre de couleurs par sommet) et du temps d'exécution.
 
     :param algo: both | simple | tons
     :param node_min: Le nombre de sommets minimum
     :param nodes_max: Le nombre de sommets maximal
     :param p: Probabilité d'ajout d'arêtes dans le graphe aléatoire
-    :param b: Nombre de couleurs pour greedy_coloring_tons
+    :param max_b: Plus grande valeur de b à tester pour greedy_coloring_tons
     :param iteration: Nombre de répétitions pour moyenne
-    :return: DataFrame avec colonnes: n, time_greedy (s), time_tons (s)
+    :return: DataFrame avec colonnes: n, b, time_greedy (s), time_tons (s)
     """
     data = {
         "n": [],
+        "b": [],
         "time_greedy": [],
         "time_tons": []
     }
+
+    total_iterations = (nodes_max - node_min + 1) * iteration * (max_b if algo != "simple" else 1)
     progress = 0
-    total_iterations = (nodes_max - node_min + 1 ) * iteration
 
     for n in range(node_min, nodes_max + 1):
-        total_time_greedy = 0
-        total_time_tons = 0
+        for b in range(1, max_b + 1):
+            total_time_greedy = 0
+            total_time_tons = 0
 
-        for _ in range(iteration):
-            graph = generate_random_graph(n, p)
+            for _ in range(iteration):
+                if circular:
+                    graph = generate_circular_graph(n,t)
+                else:
+                    graph = generate_random_graph(n, p)
 
-            # Temps pour greedy_coloring
-            if algo == "both" or algo == "simple":
-                start = time.perf_counter()
-                _, _ = greedy_coloring(graph)
-                total_time_greedy += time.perf_counter() - start
+                # Temps pour greedy_coloring
+                if algo == "both" or algo == "simple":
+                    start = time.perf_counter()
+                    _, _ = greedy_coloring(graph)
+                    total_time_greedy += time.perf_counter() - start
 
-            if algo == "both" or algo == "tons":
-                # Temps pour greedy_coloring_tons
-                start = time.perf_counter()
-                _, _ = greedy_coloring_tons(graph, b=b)
-                total_time_tons += time.perf_counter() - start
+                if algo == "both" or algo == "tons":
+                    start = time.perf_counter()
+                    _, _ = greedy_coloring_tons(graph, b=b)
+                    total_time_tons += time.perf_counter() - start
 
-            progress += 1
-            percentage = (progress / total_iterations) * 100
-            print(f"Progression: {progress}/{total_iterations} ({percentage:.2f}%)", end="\r", flush=True)
+                progress += 1
+                percentage = (progress / total_iterations) * 100
+                print(f"Progression: {progress}/{total_iterations} ({percentage:.2f}%)", end="\r", flush=True)
 
-        avg_time_greedy = total_time_greedy / iteration
-        avg_time_tons = total_time_tons / iteration
+            avg_time_greedy = total_time_greedy / iteration if algo != "tons" else 0
+            avg_time_tons = total_time_tons / iteration if algo != "simple" else 0
 
-        data["n"].append(n)
-        data["time_greedy"].append(avg_time_greedy)
-        data["time_tons"].append(avg_time_tons)
+            data["n"].append(n)
+            data["b"].append(b)
+            data["time_greedy"].append(avg_time_greedy)
+            data["time_tons"].append(avg_time_tons)
+
+            # Si on ne teste pas les tons, pas besoin de faire plusieurs b
+            if algo == "simple":
+                break
 
     return pd.DataFrame(data)
 
-def max_perf_stats(node_min=2, p=0.5, b=2, algo="both", max_avg_time=10):
+def max_perf_stats(node_min=2, p=0.5, b=2, algo="both", max_avg_time=1,circular=False, t=1):
     """
     Génère des statistiques sur les algorithmes de coloration, en augmentant le nombre de sommets.
     S'arrête dès qu'un des algorithmes dépasse max_avg_time secondes pour un seul test.
@@ -191,36 +207,42 @@ def max_perf_stats(node_min=2, p=0.5, b=2, algo="both", max_avg_time=10):
     }
 
     n = node_min
+    try:
+        while True:
+            print(f"Perf n = {n}", flush=True, end="\r")
 
-    while True:
-        print(f"Perf n = {n}", flush=True, end="\r")
+            if circular:
+                graph = generate_circular_graph(n, t)
+            else:
+                graph = generate_random_graph(n, p)
 
-        graph = generate_random_graph(n, p)
+            time_greedy = 0
+            time_tons = 0
 
-        time_greedy = 0
-        time_tons = 0
+            if algo in ("both", "simple"):
+                start = time.perf_counter()
+                _, _ = greedy_coloring(graph)
+                time_greedy = time.perf_counter() - start
 
-        if algo in ("both", "simple"):
-            start = time.perf_counter()
-            _, _ = greedy_coloring(graph)
-            time_greedy = time.perf_counter() - start
+            if algo in ("both", "tons"):
+                start = time.perf_counter()
+                _, _ = greedy_coloring_tons(graph, b=b)
+                time_tons = time.perf_counter() - start
 
-        if algo in ("both", "tons"):
-            start = time.perf_counter()
-            _, _ = greedy_coloring_tons(graph, b=b)
-            time_tons = time.perf_counter() - start
+            data["n"].append(n)
+            data["time_greedy"].append(time_greedy)
+            data["time_tons"].append(time_tons)
 
-        data["n"].append(n)
-        data["time_greedy"].append(time_greedy)
-        data["time_tons"].append(time_tons)
+            # Condition d’arrêt
+            if (algo in ("both", "simple") and time_greedy > max_avg_time) or \
+               (algo in ("both", "tons") and time_tons > max_avg_time):
+                print(f"\n⏱️ Arrêt à n = {n} : temps d'exécution supérieur à {max_avg_time} secondes.")
+                break
 
-        # Condition d’arrêt
-        if (algo in ("both", "simple") and time_greedy > max_avg_time) or \
-           (algo in ("both", "tons") and time_tons > max_avg_time):
-            print(f"\n⏱️ Arrêt à n = {n} : temps d'exécution supérieur à {max_avg_time} secondes.")
-            break
+            n += 1
 
-        n += 1
+    except KeyboardInterrupt:
+        print(f"\n⛔ Interruption clavier détectée à n = {n}. Résultats partiels enregistrés.")
 
     return pd.DataFrame(data)
 
@@ -262,16 +284,47 @@ def plot_stats(stats):
 
 def plot_perf(df):
     """
-    Affichage d'une courbe en fonction du tableau des temps d'exécutions
-    :param df: Tableau des temps d'exécutions
-    :return:
+    Affiche des courbes de performance pour greedy_coloring et greedy_coloring_tons
+    avec une courbe par valeur de b.
+
+    :param df: DataFrame contenant les colonnes n, b, time_greedy, time_tons
     """
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(data=df, x="n", y="time_greedy", label="Greedy Coloring")
-    sns.lineplot(data=df, x="n", y="time_tons", label="Greedy Tons Coloring")
+    plt.figure(figsize=(12, 7))
+
+    # Courbes pour greedy_coloring_tons
+    for b in sorted(df['b'].unique()):
+        subset = df[df['b'] == b]
+        sns.lineplot(data=subset, x="n", y="time_tons", label=f"Tons Coloring (b={b})")
+
+    # Une seule courbe pour greedy_coloring si les temps sont les mêmes quel que soit b
+    if df["time_greedy"].sum() > 0:
+        sns.lineplot(data=df[df["b"] == 1], x="n", y="time_greedy", label="Greedy Coloring (b=1)", linestyle="--",
+                     color="black")
+
     plt.xlabel("Nombre de sommets (n)")
     plt.ylabel("Temps d'exécution moyen (s)")
-    plt.title("Temps d'exécution en fonction de n")
+    plt.title("Comparaison des temps d'exécution selon b (tons et greedy)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def plot_perf_multi(df):
+    """
+    Affiche les courbes d'exécution pour greedy_coloring_tons
+    avec une courbe par valeur de b.
+
+    :param df: DataFrame avec colonnes: n, time_tons, b
+    """
+    plt.figure(figsize=(12, 7))
+
+    for b in sorted(df['b'].unique()):
+        subset = df[df['b'] == b]
+        sns.lineplot(data=subset, x="n", y="time_tons", label=f"Tons Coloring (b={b})")
+
+    plt.xlabel("Nombre de sommets (n)")
+    plt.ylabel("Temps d'exécution (s)")
+    plt.title("Temps d'exécution de greedy_coloring_tons en fonction de n pour différentes valeurs de b")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
