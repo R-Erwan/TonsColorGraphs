@@ -283,6 +283,7 @@ def plot_stats(stats):
     plt.show()
 
 def plot_perf(df):
+
     """
     Affiche des courbes de performance pour greedy_coloring et greedy_coloring_tons
     avec une courbe par valeur de b.
