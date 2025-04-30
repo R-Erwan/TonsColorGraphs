@@ -127,3 +127,17 @@ def shortest_path_length(graph, source, target):
                 visited.add(neighbor)
                 queue.append((neighbor, dist + 1))
     return float('inf')  # Si aucun chemin n'existe
+
+
+def bfs_distances(graphe, start):
+    """Retourne un dictionnaire des distances depuis start vers tous les autres sommets."""
+    distances = {start: 0}
+    queue = deque([start])
+
+    while queue:
+        current = queue.popleft()
+        for neighbor in graphe[current]:
+            if neighbor not in distances:
+                distances[neighbor] = distances[current] + 1
+                queue.append(neighbor)
+    return distances

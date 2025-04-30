@@ -1,10 +1,12 @@
+import itertools
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import time
 from matplotlib import pyplot as plt
 
-from graph_utils import generate_circular_graph, generate_random_graph
+from graph_utils import generate_circular_graph, generate_random_graph, shortest_path_length, bfs_distances
 
 
 def dsatur(graphe):
@@ -100,38 +102,29 @@ def dsatur(graphe):
     # Retourne le tableau clé-valeur des couleurs attribuées à chaque sommet
     return couleurs
 
+def respecte_contrainte_coloration(couleurs, sommet, tons_candidats, distances):
+    """Vérifie la contrainte |C(u) ∩ C(v)| < d(u,v) avec tous les sommets déjà colorés."""
+    for autre, tons_autre in couleurs.items():
+        if autre == sommet or not tons_autre:
+            continue
+        if autre in distances:
+            d = distances[autre]
+            if len(tons_candidats & tons_autre) >= d:
+                return False
+    return True
+
 def dsatur_tons(graphe, b):
-    # Initialisation des degrés
-    degree = {
-        sommet: len(voisins)
-        for sommet, voisins in graphe.items()
-    }
-
-    # Initialisation des ensembles de couleurs attribuées aux sommets
-    couleurs = {
-        sommet: set()
-        for sommet in graphe
-    }
-
-    # Ensemble des sommets non coloriés
+    degree = {sommet: len(voisins) for sommet, voisins in graphe.items()}
+    couleurs = {sommet: set() for sommet in graphe}
     sommets_non_colories = set(graphe.keys())
 
-    # Choix du sommet ayant le plus haut degré
     premier_sommet = max(degree, key=degree.get)
-
-    # On lui assigne les b premières couleurs : {1, 2, ..., b}
     couleurs[premier_sommet] = set(range(1, b + 1))
-
-    # On enlève le sommet choisi
     sommets_non_colories.remove(premier_sommet)
 
-    # Initialisation des saturations
-    saturation = {
-        sommet: 0
-        for sommet in graphe
-    }
+    saturation = {sommet: 0 for sommet in graphe}
+    a = b
 
-    # On met à jour la saturation des voisins du premier sommet
     for voisin in graphe[premier_sommet]:
         if not couleurs[voisin]:
             couleurs_utilisees = set()
@@ -139,50 +132,36 @@ def dsatur_tons(graphe, b):
                 couleurs_utilisees.update(couleurs[n])
             saturation[voisin] = len(couleurs_utilisees)
 
-    # Initialisation du nombre total de couleurs utilisées
-    a = b
-
-    # Tant que tous les sommets n'ont pas été coloriés
     while sommets_non_colories:
-        # On va chercher le sommet avec le plus haut degré de saturation, au début il est à -1
-        saturation_max = -1
+        max_sat = -1
         candidats = []
         for sommet in sommets_non_colories:
-            if saturation[sommet] > saturation_max:
-                saturation_max = saturation[sommet]
+            if saturation[sommet] > max_sat:
+                max_sat = saturation[sommet]
                 candidats = [sommet]
-            elif saturation[sommet] == saturation_max:
+            elif saturation[sommet] == max_sat:
                 candidats.append(sommet)
 
-        # S'il y a égalité, on choisit celui avec le plus haut degré
-        if len(candidats) > 1:
-            sommet_choisi = max(candidats, key=lambda s: degree[s])
-        else:
-            sommet_choisi = candidats[0]
+        sommet_choisi = max(candidats, key=lambda s: degree[s])
 
-        # On récupère les couleurs déjà utilisées par les voisins
-        couleurs_interdites = set()
-        for voisin in graphe[sommet_choisi]:
-            couleurs_interdites.update(couleurs[voisin])
+        distances = bfs_distances(graphe, sommet_choisi)
 
-        # On cherche un ensemble de b couleurs disjoint de couleurs_interdites
-        couleur_courante = 1
-        couleurs_attribuees = set()
-        while len(couleurs_attribuees) < b:
-            if couleur_courante not in couleurs_interdites:
-                couleurs_attribuees.add(couleur_courante)
-            couleur_courante += 1
+        trouve = False
+        max_ton_test = a
 
-        # Mise à jour du nombre total de couleurs utilisées
-        a = max(a, max(couleurs_attribuees))
+        while not trouve:
+            for combinaison in itertools.combinations(range(1, max_ton_test + 1), b):
+                tons_candidats = set(combinaison)
+                if respecte_contrainte_coloration(couleurs, sommet_choisi, tons_candidats, distances):
+                    couleurs[sommet_choisi] = tons_candidats
+                    a = max(a, max(tons_candidats))
+                    trouve = True
+                    break
+            if not trouve:
+                max_ton_test += 1  # On augmente a
 
-        # On attribue des couleurs au sommet
-        couleurs[sommet_choisi] = couleurs_attribuees
-
-        # On enlève le sommet choisi des sommets non colorié
         sommets_non_colories.remove(sommet_choisi)
 
-        # On met à jour des saturations des voisins non coloriés
         for voisin in graphe[sommet_choisi]:
             if not couleurs[voisin]:
                 couleurs_utilisees = set()
@@ -190,7 +169,6 @@ def dsatur_tons(graphe, b):
                     couleurs_utilisees.update(couleurs[n])
                 saturation[voisin] = len(couleurs_utilisees)
 
-    #  On retourne la plus petite valeur de a trouvée pour une (a, b)-coloration
     return a, couleurs
 
 def dsatur_stats(max_n=10, p=0.5, max_b=5, iteration=20, algo='tons', circular=False, t=1):
