@@ -61,51 +61,51 @@ def all_algo_exec(n=5, p=0.5, b=2, alpha_only=False, circular=False, t=1, graph=
     start = time.perf_counter()
     alpha_gt, tons_coloring = dsatur_tons(random_graph, b=b)
     end = time.perf_counter()
-    print(f"\nDSatur tons, b = {b}, alpha = {alpha_gt}, temps = {end - start:.6f}s")
+    print(f"\nDSATUR tons, b = {b}, alpha = {alpha_gt}, temps = {end - start:.6f}s")
     if not alpha_only:
         display_tone_coloring(coloring=tons_coloring)
 
 
 
 # ===== GLUTTON ALGO STATS =====
-
-# 1 - HeatMap random graph n - b(1-4)
-results = greedy_stats(max_n=10,p=0.5,max_b=4,iteration=5,algo="tons",circular=False)
-print_stats_table(results)
-plot_stats(results)
-
-# 2 - HeatMap circular graph n - b(1-4) - t(1-3)
-results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=1)
-print_stats_table(results)
-plot_stats(results)
-
-results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=3)
-print_stats_table(results)
-plot_stats(results)
-
-results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=4)
-print_stats_table(results)
-plot_stats(results)
-
-# 3 Perfs random graph b (2-5)
-results = []
-for b in range(2, 6):
-    df_b = max_perf_stats(node_min=1, p=0.5, b=b, algo="tons", max_avg_time=1,circular=False)
-    df_b["b"] = b
-    results.append(df_b)
-
-df_all = pd.concat(results, ignore_index=True)
-plot_perf_multi(df_all)
-
-
-# 4 Perfs circular graph b(1-5) - t = 2
-results = []
-for b in range(2, 6):
-    df_b = max_perf_stats(node_min=1, p=0.5, b=b, algo="tons", max_avg_time=1,circular=True,t=2)
-    df_b["b"] = b
-    results.append(df_b)
-
-df_all = pd.concat(results, ignore_index=True)
-plot_perf_multi(df_all)
-
-
+#
+# # 1 - HeatMap random graph n - b(1-4)
+# results = greedy_stats(max_n=10,p=0.5,max_b=4,iteration=5,algo="tons",circular=False)
+# print_stats_table(results)
+# plot_stats(results)
+#
+# # 2 - HeatMap circular graph n - b(1-4) - t(1-3)
+# results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=1)
+# print_stats_table(results)
+# plot_stats(results)
+#
+# results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=3)
+# print_stats_table(results)
+# plot_stats(results)
+#
+# results = greedy_stats(max_n=20,p=0.5,max_b=4,iteration=1,algo="tons",circular=True,t=4)
+# print_stats_table(results)
+# plot_stats(results)
+#
+# # 3 Perfs random graph b (2-5)
+# results = []
+# for b in range(2, 6):
+#     df_b = max_perf_stats(node_min=1, p=0.5, b=b, algo="tons", max_avg_time=1,circular=False)
+#     df_b["b"] = b
+#     results.append(df_b)
+#
+# df_all = pd.concat(results, ignore_index=True)
+# plot_perf_multi(df_all)
+#
+#
+# # 4 Perfs circular graph b(1-5) - t = 2
+# results = []
+# for b in range(2, 6):
+#     df_b = max_perf_stats(node_min=1, p=0.5, b=b, algo="tons", max_avg_time=1,circular=True,t=2)
+#     df_b["b"] = b
+#     results.append(df_b)
+#
+# df_all = pd.concat(results, ignore_index=True)
+# plot_perf_multi(df_all)
+#
+#
