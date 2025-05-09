@@ -40,7 +40,6 @@ def generate_circular_graph(n, t):
             graph[(i + t) % n].append(i)
     return graph
 
-
 # Coloring display
 def display_coloring(coloring):
     """

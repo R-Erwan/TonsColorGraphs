@@ -8,7 +8,6 @@ from matplotlib import pyplot as plt
 
 from graph_utils import generate_circular_graph, generate_random_graph, shortest_path_length, bfs_distances
 
-
 def dsatur(graphe):
     # On initialise un tableau clé-valeur qui représente le couple sommet-degré ; le nombre de voisins
     # que possède un sommet
@@ -215,8 +214,6 @@ def dsatur_stats(max_n=10, p=0.5, max_b=5, iteration=20, algo='tons', circular=F
     print("\nAnalyse terminée !")  # Affichage final pour éviter l'écrasement de la dernière ligne
     return stats
 
-
-
 def perf_stats_nodes_dsatur(node_min=2, nodes_max=10, p=0.5, max_b=2, iteration=5, algo="both", circular=False, t=1):
     """
     Génère des statistiques sur les algorithmes de coloration, en fonction du nombre de sommets,
@@ -280,8 +277,6 @@ def perf_stats_nodes_dsatur(node_min=2, nodes_max=10, p=0.5, max_b=2, iteration=
 
     return pd.DataFrame(data)
 
-
-
 def max_perf_stats_dsatur(node_min=2, p=0.5, b=2, algo="both", max_avg_time=1, circular=False, t=1):
     """
     Génère des statistiques sur les algorithmes de coloration, en augmentant le nombre de sommets.
@@ -340,9 +335,6 @@ def max_perf_stats_dsatur(node_min=2, p=0.5, b=2, algo="both", max_avg_time=1, c
 
     return pd.DataFrame(data)
 
-
-
-
 def plot_perf(df):
 
     """
@@ -371,8 +363,6 @@ def plot_perf(df):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
-
-
 
 def plot_perf_multi_dsatur(df):
     """
