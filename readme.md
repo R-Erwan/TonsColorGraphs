@@ -13,3 +13,9 @@
 ## Mesures de performances
 - HeatMap du alpha minimum
 - Mesures de performances
+
+```python
+pip install -r requirement.txt
+python main.py
+python main_dsatur.py
+```
